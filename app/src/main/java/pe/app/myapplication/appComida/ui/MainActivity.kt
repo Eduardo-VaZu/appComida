@@ -20,8 +20,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: MealAdapter
 
-    // Categorías según PDF
-    private val categories = listOf("Beef", "Chicken", "Dessert", "Lamb", "Miscellaneous",
+    private val categories = listOf("Todos los platos",
+        "Beef", "Chicken", "Dessert", "Lamb", "Miscellaneous",
         "Pasta", "Pork", "Seafood", "Side", "Starter",
         "Vegan", "Vegetarian", "Breakfast", "Goat")
 
@@ -32,11 +32,11 @@ class MainActivity : AppCompatActivity() {
 
         setupRecyclerView()
         setupDropdown()
+        fetchMeals("Todos los platos")
     }
 
     private fun setupRecyclerView() {
         adapter = MealAdapter(emptyList()) { idMeal ->
-            // Navegación al detalle
             val intent = Intent(this, DetailActivity::class.java)
             intent.putExtra("ID_MEAL", idMeal)
             startActivity(intent)
@@ -50,7 +50,7 @@ class MainActivity : AppCompatActivity() {
         binding.autoCompleteTxt.setAdapter(adapterDropdown)
 
         binding.autoCompleteTxt.setOnItemClickListener { _, _, position, _ ->
-            val selectedCategory = categories[position]
+            val selectedCategory = categories[0]
             fetchMeals(selectedCategory)
         }
     }
@@ -61,7 +61,11 @@ class MainActivity : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = RetrofitClient.instance.getMealsByCategory(category)
+                val response = if (category == "Todos los platos") {
+                    RetrofitClient.instance.getMealsByName("")
+                } else {
+                    RetrofitClient.instance.getMealsByCategory(category)
+                }
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful) {
                         val meals = response.body()?.meals ?: emptyList()

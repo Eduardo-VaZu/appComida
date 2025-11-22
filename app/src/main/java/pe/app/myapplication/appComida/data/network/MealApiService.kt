@@ -11,4 +11,7 @@ interface MealApiService {
 
     @GET("lookup.php")
     suspend fun getMealDetails(@Query("i") id: String): Response<MealResponse>
+
+    @GET("search.php")
+    suspend fun getMealsByName(@Query("s") name: String): Response<MealResponse>
 }
