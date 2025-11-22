@@ -1,18 +1,18 @@
 package pe.app.myapplication.appComida.ui
 
 import android.os.Bundle
+import android.view.View
+import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import pe.app.myapplication.appComida.data.network.RetrofitClient
 import pe.app.myapplication.appComida.databinding.ActivityDetailBinding
+import pe.app.myapplication.appComida.ui.viewmodel.DetailViewModel
 
 class DetailActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDetailBinding
+private val viewModel: DetailViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,38 +21,30 @@ class DetailActivity : AppCompatActivity() {
 
         val idMeal = intent.getStringExtra("ID_MEAL")
         if (idMeal != null) {
-            fetchMealDetails(idMeal)
+            viewModel.fetchMealDetails(idMeal)
         }
 
         binding.btnVolver.setOnClickListener {
             finish()
         }
+
+        setupObservers()
     }
 
-    private fun fetchMealDetails(id: String) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = RetrofitClient.instance.getMealDetails(id)
-                if (response.isSuccessful) {
-                    val mealList = response.body()?.meals
-                    if (!mealList.isNullOrEmpty()) {
-                        val meal = mealList[0]
-                        withContext(Dispatchers.Main) {
-                            binding.tvIdMeal.text = meal.idMeal
-                            binding.tvStrMeal.text = meal.strMeal
-                            binding.tvCategory.text = meal.strCategory
-                            binding.tvArea.text = meal.strArea
-                            binding.tvYoutube.text = meal.strYoutube
+    private fun setupObservers() {
 
-                            Glide.with(this@DetailActivity)
-                                .load(meal.strMealThumb)
-                                .into(binding.imgDetail)
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
+        viewModel.isLoading.observe(this) { isLoading ->
+            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
+        viewModel.error.observe(this) { errorMessage ->
+            if (errorMessage != null) {
+                AlertDialog.Builder(this)
+                    .setTitle("Error")
+                    .setMessage(errorMessage)
+                    .setPositiveButton("OK") { _, _ -> }
+                    .show()
             }
         }
     }
+
 }

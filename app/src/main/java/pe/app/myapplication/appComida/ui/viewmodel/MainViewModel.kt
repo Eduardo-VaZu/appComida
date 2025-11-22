@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import pe.app.myapplication.appComida.data.model.Meal
 import pe.app.myapplication.appComida.data.network.RetrofitClient
 
+
 class MainViewModel : ViewModel() {
 
     private val _meals = MutableLiveData<List<Meal>>()
@@ -22,7 +23,7 @@ class MainViewModel : ViewModel() {
 
     fun fetchMeals(category: String) {
         _isLoading.value = true
-
+        _error.value = null
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val response = if (category == "Todos los platos") {
@@ -31,16 +32,17 @@ class MainViewModel : ViewModel() {
                     RetrofitClient.instance.getMealsByCategory(category)
                 }
 
-                if (response.isSuccessful) {
-                    val mealList = response.body()?.meals ?: emptyList()
-                    _meals.postValue(mealList)
-                } else {
-                    _error.postValue("Error en la respuesta: ${response.code()}")
+                launch(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val mealList = response.body()?.meals ?: emptyList()
+                        _meals.value = mealList
+                    } else {
+                        _error.value = "Error en la respuesta: ${response.code()}"
+                    }
+                    _isLoading.value = false
                 }
             } catch (e: Exception) {
-                _error.postValue("Fallo de conexión: ${e.message}")
-            } finally {
-                _isLoading.postValue(false)
+                launch(Dispatchers.Main) { _error.value = "Fallo de conexión: ${e.message}"; _isLoading.value = false}
             }
         }
     }

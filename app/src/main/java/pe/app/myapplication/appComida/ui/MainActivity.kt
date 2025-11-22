@@ -49,9 +49,10 @@ class MainActivity : AppCompatActivity() {
     private fun setupDropdown() {
         val adapterDropdown = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, categories)
         binding.autoCompleteTxt.setAdapter(adapterDropdown)
+        binding.autoCompleteTxt.setText(categories[0], false)
 
         binding.autoCompleteTxt.setOnItemClickListener { _, _, position, _ ->
-            val selectedCategory = categories[0]
+            val selectedCategory = categories[position]
             viewModel.fetchMeals(selectedCategory)
         }
     }
