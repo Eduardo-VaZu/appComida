@@ -2,14 +2,18 @@ package pe.app.myapplication.appComida.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import pe.app.myapplication.appComida.data.model.Category
 import pe.app.myapplication.appComida.data.network.RetrofitClient
 import pe.app.myapplication.appComida.databinding.ActivityMainBinding
 import pe.app.myapplication.appComida.ui.adapter.MealAdapter
@@ -19,19 +23,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: MealAdapter
 
-    private val categories = listOf("Todos los platos",
-        "Beef", "Chicken", "Dessert", "Lamb", "Miscellaneous",
-        "Pasta", "Pork", "Seafood", "Side", "Starter",
-        "Vegan", "Vegetarian", "Breakfast", "Goat")
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setupRecyclerView()
-        setupDropdown()
-        fetchMeals("Todos los platos")
+        fetchCategories()
     }
 
     private fun setupRecyclerView() {
@@ -44,7 +42,9 @@ class MainActivity : AppCompatActivity() {
         binding.recyclerView.adapter = adapter
     }
 
-    private fun setupDropdown() {
+
+
+    private fun setupDropdown(categories: List<String>) {
         val adapterDropdown = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, categories)
         binding.autoCompleteTxt.setAdapter(adapterDropdown)
         binding.autoCompleteTxt.setText(categories[0], false)
@@ -82,6 +82,38 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     binding.progressBar.visibility = android.view.View.GONE
                     binding.recyclerView.visibility = android.view.View.VISIBLE
+                }
+            }
+        }
+    }
+
+    private fun fetchCategories() {
+        binding.progressBar.visibility = View.VISIBLE
+        binding.recyclerView.visibility = View.GONE
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.instance.getCategories()
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val categoriesApi = response.body()?.categories ?: emptyList()
+
+                        val categoryNames = mutableListOf("Todos los platos")
+                        categoryNames.addAll(categoriesApi.map { it.strCategory })
+
+                        setupDropdown(categoryNames)
+
+                        fetchMeals("Todos los platos")
+                    } else {
+                        Toast.makeText(this@MainActivity, "Error al cargar categorías", Toast.LENGTH_SHORT).show()
+
+                        fetchMeals("Todos los platos")
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "Error de red: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
