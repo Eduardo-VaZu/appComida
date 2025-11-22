@@ -1,3 +1,5 @@
+package pe.app.myapplication.appComida.ui
+
 import android.content.Intent
 import android.os.Bundle
 import android.widget.ArrayAdapter
@@ -54,18 +56,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fetchMeals(category: String) {
+        binding.progressBar.visibility = android.view.View.VISIBLE
+        binding.recyclerView.visibility = android.view.View.GONE
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = RetrofitClient.instance.getMealsByCategory(category)
-                if (response.isSuccessful) {
-                    val meals = response.body()?.meals ?: emptyList()
-                    withContext(Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val meals = response.body()?.meals ?: emptyList()
                         adapter.updateList(meals)
+                    } else {
+                        Toast.makeText(this@MainActivity, "Error en la respuesta", Toast.LENGTH_SHORT).show()
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, "Error de red: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            } finally {
+                withContext(Dispatchers.Main) {
+                    binding.progressBar.visibility = android.view.View.GONE
+                    binding.recyclerView.visibility = android.view.View.VISIBLE
                 }
             }
         }
