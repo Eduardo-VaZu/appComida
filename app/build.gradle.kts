@@ -59,4 +59,9 @@ dependencies {
 
     // Corutinas para ejecutar en segundo plano
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // Agrega estas para el ViewModel:
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.3")
+    implementation("androidx.activity:activity-ktx:1.9.1")
 }

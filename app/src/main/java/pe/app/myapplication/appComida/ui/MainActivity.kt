@@ -2,28 +2,28 @@ package pe.app.myapplication.appComida.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import pe.app.myapplication.appComida.data.network.RetrofitClient
 import pe.app.myapplication.appComida.databinding.ActivityMainBinding
-import pe.app.myapplication.appComida.ui.DetailActivity
 import pe.app.myapplication.appComida.ui.adapter.MealAdapter
+import pe.app.myapplication.appComida.ui.viewmodel.MainViewModel
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: MealAdapter
+    private val viewModel: MainViewModel by viewModels()
 
-    // Categorías según PDF
-    private val categories = listOf("Beef", "Chicken", "Dessert", "Lamb", "Miscellaneous",
+    private val categories = listOf(
+        "Todos los platos",
+        "Beef", "Chicken", "Dessert", "Lamb", "Miscellaneous",
         "Pasta", "Pork", "Seafood", "Side", "Starter",
-        "Vegan", "Vegetarian", "Breakfast", "Goat")
+        "Vegan", "Vegetarian", "Breakfast", "Goat"
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,11 +32,12 @@ class MainActivity : AppCompatActivity() {
 
         setupRecyclerView()
         setupDropdown()
+        setupObservers()
+        viewModel.fetchMeals("Todos los platos")
     }
 
     private fun setupRecyclerView() {
         adapter = MealAdapter(emptyList()) { idMeal ->
-            // Navegación al detalle
             val intent = Intent(this, DetailActivity::class.java)
             intent.putExtra("ID_MEAL", idMeal)
             startActivity(intent)
@@ -50,35 +51,24 @@ class MainActivity : AppCompatActivity() {
         binding.autoCompleteTxt.setAdapter(adapterDropdown)
 
         binding.autoCompleteTxt.setOnItemClickListener { _, _, position, _ ->
-            val selectedCategory = categories[position]
-            fetchMeals(selectedCategory)
+            val selectedCategory = categories[0]
+            viewModel.fetchMeals(selectedCategory)
         }
     }
 
-    private fun fetchMeals(category: String) {
-        binding.progressBar.visibility = android.view.View.VISIBLE
-        binding.recyclerView.visibility = android.view.View.GONE
+    private fun setupObservers() {
+        viewModel.meals.observe(this) { mealList ->
+            adapter.updateList(mealList)
+        }
 
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = RetrofitClient.instance.getMealsByCategory(category)
-                withContext(Dispatchers.Main) {
-                    if (response.isSuccessful) {
-                        val meals = response.body()?.meals ?: emptyList()
-                        adapter.updateList(meals)
-                    } else {
-                        Toast.makeText(this@MainActivity, "Error en la respuesta", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(this@MainActivity, "Error de red: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            } finally {
-                withContext(Dispatchers.Main) {
-                    binding.progressBar.visibility = android.view.View.GONE
-                    binding.recyclerView.visibility = android.view.View.VISIBLE
-                }
+        viewModel.isLoading.observe(this) { isLoading ->
+            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+            binding.recyclerView.visibility = if (isLoading) View.GONE else View.VISIBLE
+        }
+
+        viewModel.error.observe(this) { errorMessage ->
+            if (errorMessage != null) {
+                Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show()
             }
         }
     }
