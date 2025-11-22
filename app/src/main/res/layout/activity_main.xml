@@ -7,7 +7,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Juan Mora Oca (TU NOMBRE AQUÍ)"
+        android:text="Eduardo Vargas Zumaeta"
         android:textColor="#D50000"
         android:textStyle="bold"
         android:layout_gravity="end"/>
