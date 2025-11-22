@@ -1,5 +1,6 @@
 package pe.app.myapplication.appComida.data.network
 
+import pe.app.myapplication.appComida.data.model.CategoryResponse
 import pe.app.myapplication.appComida.data.model.MealResponse
 import retrofit2.Response
 import retrofit2.http.GET
@@ -14,4 +15,7 @@ interface MealApiService {
 
     @GET("search.php")
     suspend fun getMealsByName(@Query("s") name: String): Response<MealResponse>
+
+    @GET("categories.php")
+    suspend fun getCategories(): Response<CategoryResponse>
 }

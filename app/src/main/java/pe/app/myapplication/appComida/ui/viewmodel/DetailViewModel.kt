@@ -26,10 +26,15 @@ class DetailViewModel : ViewModel() {
             try {
                 val response = RetrofitClient.instance.getMealDetails(id)
 
-                if (response.isSuccessful && response.body() != null) {
-                    _meal.postValue(response.body()?.meals?.firstOrNull())
+                if (response.isSuccessful) {
+                    val meals = response.body()?.meals
+                    if (!meals.isNullOrEmpty()) {
+                        _meal.postValue(meals[0])
+                    } else {
+                        _error.postValue("No se encontraron detalles para este plato")
+                    }
                 } else {
-                    _error.postValue("Error: ${response.message()}")
+                    _error.postValue("Error en el servidor")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

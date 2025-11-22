@@ -31,8 +31,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setupRecyclerView()
-        setupDropdown()
         setupObservers()
+
+        viewModel.fetchCategories()
         viewModel.fetchMeals("Todos los platos")
     }
 
@@ -46,17 +47,6 @@ class MainActivity : AppCompatActivity() {
         binding.recyclerView.adapter = adapter
     }
 
-    private fun setupDropdown() {
-        val adapterDropdown = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, categories)
-        binding.autoCompleteTxt.setAdapter(adapterDropdown)
-        binding.autoCompleteTxt.setText(categories[0], false)
-
-        binding.autoCompleteTxt.setOnItemClickListener { _, _, position, _ ->
-            val selectedCategory = categories[position]
-            viewModel.fetchMeals(selectedCategory)
-        }
-    }
-
     private fun setupObservers() {
         viewModel.meals.observe(this) { mealList ->
             adapter.updateList(mealList)
@@ -68,9 +58,22 @@ class MainActivity : AppCompatActivity() {
         }
 
         viewModel.error.observe(this) { errorMessage ->
-            if (errorMessage != null) {
-                Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show()
+        }
+
+        viewModel.categories.observe(this) { categories ->
+            val categoryNames = mutableListOf("Todos los platos")
+            categoryNames.addAll(categories.map { it.strCategory })
+
+            val adapterDropdown = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, categoryNames)
+            binding.autoCompleteTxt.setAdapter(adapterDropdown)
+
+            binding.autoCompleteTxt.setOnItemClickListener { _, _, position, _ ->
+                val selectedCategory = categoryNames[position]
+                viewModel.fetchMeals(selectedCategory)
             }
+
+            binding.autoCompleteTxt.setText(categoryNames[0], false)
         }
     }
 }
